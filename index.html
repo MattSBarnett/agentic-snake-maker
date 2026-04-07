@@ -19,7 +19,7 @@
         { x: 125, y: 175 },
       ];
       let food = randomFood();
-      let direction = "d"; // start moving right
+      let direction = "d";
 
       function draw() {
         const canvas = document.getElementById("canvas");
@@ -76,7 +76,7 @@
         if (e.key === "d") direction = "d";
       });
 
-      setInterval(tick, 150); // runs every 150ms, lower = faster
+      setInterval(tick, 150);
     </script>
   </body>
 </html>
