@@ -30,21 +30,28 @@
         });
       }
 
+      let direction = "d"; // start moving right
+
       document.addEventListener("keydown", (e) => {
+        if (e.key === "w") direction = "w";
+        if (e.key === "a") direction = "a";
+        if (e.key === "s") direction = "s";
+        if (e.key === "d") direction = "d";
+      });
+
+      function tick() {
         const head = { ...snake[0] };
 
-        if (e.key === "w") head.y -= 25;
-        if (e.key === "a") head.x -= 25;
-        if (e.key === "s") head.y += 25;
-        if (e.key === "d") head.x += 25;
+        if (direction === "w") head.y -= 25;
+        if (direction === "a") head.x -= 25;
+        if (direction === "s") head.y += 25;
+        if (direction === "d") head.x += 25;
 
-        // wrap around edges
         if (head.x >= 400) head.x = 0;
         if (head.x < 0) head.x = 375;
         if (head.y >= 400) head.y = 0;
         if (head.y < 0) head.y = 375;
 
-        // ignore if new head hits any segment
         const hitSelf = snake.some(
           (seg) => seg.x === head.x && seg.y === head.y,
         );
@@ -53,9 +60,9 @@
         snake.unshift(head);
         snake.pop();
         draw();
-      });
+      }
 
-      draw();
+      setInterval(tick, 150); // runs every 150ms, lower = faster
     </script>
   </body>
 </html>
