@@ -44,6 +44,12 @@
         if (head.y >= 400) head.y = 0;
         if (head.y < 0) head.y = 375;
 
+        // ignore if new head hits any segment
+        const hitSelf = snake.some(
+          (seg) => seg.x === head.x && seg.y === head.y,
+        );
+        if (hitSelf) return;
+
         snake.unshift(head);
         snake.pop();
         draw();
