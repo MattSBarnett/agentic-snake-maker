@@ -14,9 +14,9 @@
 
     <script>
       const snake = [
-        { x: 187, y: 187 },
-        { x: 162, y: 187 },
-        { x: 137, y: 187 },
+        { x: 175, y: 175 },
+        { x: 150, y: 175 },
+        { x: 125, y: 175 },
       ];
 
       function draw() {
@@ -37,6 +37,12 @@
         if (e.key === "a") head.x -= 25;
         if (e.key === "s") head.y += 25;
         if (e.key === "d") head.x += 25;
+
+        // wrap around edges
+        if (head.x >= 400) head.x = 0;
+        if (head.x < 0) head.x = 375;
+        if (head.y >= 400) head.y = 0;
+        if (head.y < 0) head.y = 375;
 
         snake.unshift(head);
         snake.pop();
