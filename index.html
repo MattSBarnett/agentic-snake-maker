@@ -77,6 +77,10 @@
       });
 
       setInterval(tick, 150);
+
+      window.getGameState = function () {
+        return { snake, food };
+      };
     </script>
   </body>
 </html>
