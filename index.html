@@ -18,26 +18,22 @@
         { x: 150, y: 175 },
         { x: 125, y: 175 },
       ];
+      let food = randomFood();
+      let direction = "d"; // start moving right
 
       function draw() {
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, 25, 25);
+
         ctx.fillStyle = "green";
         snake.forEach((segment) => {
           ctx.fillRect(segment.x, segment.y, 25, 25);
         });
       }
-
-      let direction = "d"; // start moving right
-
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "w") direction = "w";
-        if (e.key === "a") direction = "a";
-        if (e.key === "s") direction = "s";
-        if (e.key === "d") direction = "d";
-      });
 
       function tick() {
         const head = { ...snake[0] };
@@ -58,9 +54,27 @@
         if (hitSelf) return;
 
         snake.unshift(head);
-        snake.pop();
+
+        if (head.x === food.x && head.y === food.y) {
+          food = randomFood();
+        } else {
+          snake.pop();
+        }
         draw();
       }
+
+      function randomFood() {
+        const x = Math.floor(Math.random() * 16) * 25;
+        const y = Math.floor(Math.random() * 16) * 25;
+        return { x, y };
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "w") direction = "w";
+        if (e.key === "a") direction = "a";
+        if (e.key === "s") direction = "s";
+        if (e.key === "d") direction = "d";
+      });
 
       setInterval(tick, 150); // runs every 150ms, lower = faster
     </script>
