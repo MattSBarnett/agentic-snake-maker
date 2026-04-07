@@ -13,33 +13,34 @@
     </canvas>
 
     <script>
-      const snakePosition = { x: 187, y: 187 };
+      const snake = [
+        { x: 187, y: 187 },
+        { x: 162, y: 187 },
+        { x: 137, y: 187 },
+      ];
 
       function draw() {
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         ctx.fillStyle = "green";
-        ctx.fillRect(snakePosition["x"], snakePosition["y"], 25, 25);
+        snake.forEach((segment) => {
+          ctx.fillRect(segment.x, segment.y, 25, 25);
+        });
       }
 
       document.addEventListener("keydown", (e) => {
-        if (e.key === "w") {
-          snakePosition["y"] = snakePosition["y"] - 1;
-          draw();
-        }
-        if (e.key === "a") {
-          snakePosition["x"] = snakePosition["x"] - 1;
-          draw();
-        }
-        if (e.key === "s") {
-          snakePosition["y"] = snakePosition["y"] + 1;
-          draw();
-        }
-        if (e.key === "d") {
-          snakePosition["x"] = snakePosition["x"] + 1;
-          draw();
-        }
+        const head = { ...snake[0] };
+
+        if (e.key === "w") head.y -= 25;
+        if (e.key === "a") head.x -= 25;
+        if (e.key === "s") head.y += 25;
+        if (e.key === "d") head.x += 25;
+
+        snake.unshift(head);
+        snake.pop();
+        draw();
       });
 
       draw();
