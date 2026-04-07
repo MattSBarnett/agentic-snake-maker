@@ -11,5 +11,13 @@
     >
       Sorry, your browser does not support canvas.
     </canvas>
+
+    <script>
+      const snakePosition = { x: 187, y: 187 };
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "green";
+      ctx.fillRect(snakePosition["x"], snakePosition["y"], 25, 25);
+    </script>
   </body>
 </html>
