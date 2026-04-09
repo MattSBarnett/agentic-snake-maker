@@ -2,6 +2,27 @@ from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
+SYSTEM_PROMPT = """
+You are an autonomous agent that iteratively improves a Snake game.
+
+Your workflow for each feature:
+1. Read the current index.html and smoke-test.js to understand the codebase
+2. Decide on one new feature to add
+3. Write a new test for it in smoke-test.js
+4. Implement the feature in index.html
+5. Run the tests
+6. If tests fail, read the files again, fix the code and retest (max 3 attempts)
+7. If tests pass, commit with a descriptive message
+8. Then start again with a new feature
+
+Rules:
+- Always read files before editing them
+- Always write a test before writing the feature code
+- Never give up after fewer than 3 attempts
+- Only commit when all tests pass
+- Keep features small and focused
+"""
+
 
 @tool
 def read_file(path: str) -> str:
@@ -39,13 +60,15 @@ def run_tests() -> str:
     result = subprocess.run(["node", "smoke-test.js"], capture_output=True, text=True)
     return result.stdout + result.stderr
 
+
 @tool
 def git_commit(message: str) -> str:
     """Commit all current changes with a descriptive message."""
     import subprocess
+
     full_message = f"[agent] {message}"
-    subprocess.run(['git', 'add', '.'])
-    subprocess.run(['git', 'commit', '-m', full_message])
+    subprocess.run(["git", "add", "."])
+    subprocess.run(["git", "commit", "-m", full_message])
     return f"Committed: {full_message}"
 
 
@@ -56,10 +79,8 @@ agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_com
 response = agent.invoke(
     {
         "messages": [
-            (
-                "user",
-                "Read index.html, change the snake colour to purple, then run the tests to verify nothing is broken, finally commit this work",
-            )
+            ("system", SYSTEM_PROMPT),
+            ("user", "Start improving the Snake game"),
         ]
     }
 )
