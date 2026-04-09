@@ -39,17 +39,26 @@ def run_tests() -> str:
     result = subprocess.run(["node", "smoke-test.js"], capture_output=True, text=True)
     return result.stdout + result.stderr
 
+@tool
+def git_commit(message: str) -> str:
+    """Commit all current changes with a descriptive message."""
+    import subprocess
+    full_message = f"[agent] {message}"
+    subprocess.run(['git', 'add', '.'])
+    subprocess.run(['git', 'commit', '-m', full_message])
+    return f"Committed: {full_message}"
+
 
 llm = ChatOllama(model="qwen3:14b")
 
-agent = create_react_agent(llm, tools=[read_file, write_file, run_tests])
+agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_commit])
 
 response = agent.invoke(
     {
         "messages": [
             (
                 "user",
-                "Read index.html, change the snake colour to red, then run the tests to verify nothing is broken",
+                "Read index.html, change the snake colour to purple, then run the tests to verify nothing is broken, finally commit this work",
             )
         ]
     }
