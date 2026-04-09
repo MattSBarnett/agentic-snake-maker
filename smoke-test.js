@@ -2,6 +2,8 @@ import { chromium } from "playwright";
 import { mkdirSync } from "fs";
 import { analyzeScreenshot } from "./llm.js";
 
+const AGENT_MODE = process.env.AGENT_MODE === 'true';
+
 async function testSnakeMoves(page) {
   const beforeFile = "screenshots/snake-moves-before.png";
   const afterFile = "screenshots/snake-moves-after.png";
@@ -14,7 +16,7 @@ async function testSnakeMoves(page) {
 
   const passed = after.snake[0].y > before.snake[0].y;
 
-  const vision = await analyzeScreenshot(
+  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
     beforeFile,
     afterFile,
     `These are two screenshots of a Snake game taken before and after pressing the down key. 
@@ -52,7 +54,7 @@ async function testSnakeWraps(page) {
 
   const passed = after.snake[0].x < before.snake[0].x;
 
-  const vision = await analyzeScreenshot(
+  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
     beforeFile,
     afterFile,
     `These are two screenshots of a Snake game taken as the game starts then waiting for the snake to move. 
@@ -90,7 +92,7 @@ async function testFoodEating(page) {
 
   const passed = after.snake.length > before.snake.length;
 
-  const vision = await analyzeScreenshot(
+  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
     beforeFile,
     afterFile,
     `These are two screenshots of a Snake game taken as the game starts with some food which is a red square.

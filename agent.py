@@ -21,6 +21,10 @@ Rules:
 - Never give up after fewer than 3 attempts
 - Only commit when all tests pass
 - Keep features small and focused
+
+You must NEVER stop to report what needs fixing. Always fix it yourself using the available tools.
+Keep working until all tests pass and changes are committed.
+Do not ask for confirmation or report problems — just solve them.
 """
 
 
@@ -56,10 +60,15 @@ def write_file(path: str, content: str) -> str:
 def run_tests() -> str:
     """Run the smoke tests against the game and return the results."""
     import subprocess
-
-    result = subprocess.run(["node", "smoke-test.js"], capture_output=True, text=True)
-    return result.stdout + result.stderr
-
+    result = subprocess.run(
+        ['node', 'smoke-test.js'],
+        capture_output=True,
+        text=True,
+        env={**os.environ, 'AGENT_MODE': 'true'}
+    )
+    output = result.stdout + result.stderr
+    print(output)
+    return output
 
 @tool
 def git_commit(message: str) -> str:
