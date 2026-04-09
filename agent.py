@@ -1,5 +1,6 @@
 from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
+from langchain.agents import create_react_agent
 
 @tool
 def read_file(path: str) -> str:
@@ -8,7 +9,11 @@ def read_file(path: str) -> str:
         return f.read()
 
 llm = ChatOllama(model="qwen3:14b")
-llm_with_tools = llm.bind_tools([read_file])
 
-response = llm_with_tools.invoke("Read the file index.html")
-print(response)
+agent = create_react_agent(llm, tools=[read_file])
+
+response = agent.invoke({
+    "messages": [("user", "Read the file index.html and tell me what it does")]
+})
+
+print(response["messages"][-1].content)
