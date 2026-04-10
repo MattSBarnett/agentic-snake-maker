@@ -102,6 +102,8 @@ Add this new test function to the file and add it to the results array in main()
 {test_code}
 
 Return the complete updated smoke-test.js file only, no explanation.
+
+Important: preserve all template literals exactly as they are, including backtick strings. Do not convert backticks to regular quotes.
 """
     )
     write_file("smoke-test.js", response.content)
@@ -175,14 +177,22 @@ SMOKE_TEST:
 def run_pipeline():
     feature = step_decide_feature()
     test_code = step_write_test(feature)
+
+    # snapshot before making changes
+    original_html = read_file("index.html")
+    original_tests = read_file("smoke-test.js")
+
     step_add_test_to_file(test_code)
     step_implement_feature(feature)
     passed = step_run_and_fix()
+
     if passed:
         git_commit(f"Add feature: {feature[:60]}")
         print("\n[done] feature complete and committed!")
     else:
-        print("\n[done] feature failed after 3 attempts, changes not committed")
+        print("\n[done] feature failed, restoring original files...")
+        write_file("index.html", original_html)
+        write_file("smoke-test.js", original_tests)
 
 
 run_pipeline()
