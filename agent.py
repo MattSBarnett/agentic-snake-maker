@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langchain_core.callbacks import BaseCallbackHandler
 
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
 
 SYSTEM_PROMPT = """
 You are an autonomous agent that iteratively improves a Snake game.
@@ -31,13 +31,15 @@ Rules:
 You must NEVER stop to report what needs fixing. Always fix it yourself using the available tools.
 Keep working until all tests pass and changes are committed.
 Do not ask for confirmation or report problems — just solve them.
+
+Always respond in English only. Never include Chinese characters or thinking tokens in your output.
 """
 
 
 @tool
 def read_file(path: str) -> str:
     """Read a file from disk and return its contents."""
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -57,7 +59,7 @@ def write_file(path: str, content: str) -> str:
         )
 
     os.makedirs(os.path.dirname(target), exist_ok=True)
-    with open(target, "w") as f:
+    with open(target, "w", encoding="utf-8") as f:
         f.write(content)
     return f"Successfully written to {path}"
 
