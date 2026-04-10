@@ -1,6 +1,8 @@
+import os
 from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
+from langchain_core.callbacks import BaseCallbackHandler
 
 SYSTEM_PROMPT = """
 You are an autonomous agent that iteratively improves a Snake game.
@@ -60,15 +62,17 @@ def write_file(path: str, content: str) -> str:
 def run_tests() -> str:
     """Run the smoke tests against the game and return the results."""
     import subprocess
+
     result = subprocess.run(
-        ['node', 'smoke-test.js'],
+        ["node", "smoke-test.js"],
         capture_output=True,
         text=True,
-        env={**os.environ, 'AGENT_MODE': 'true'}
+        env={**os.environ, "AGENT_MODE": "true"},
     )
     output = result.stdout + result.stderr
     print(output)
     return output
+
 
 @tool
 def git_commit(message: str) -> str:
@@ -81,6 +85,26 @@ def git_commit(message: str) -> str:
     return f"Committed: {full_message}"
 
 
+class LoggingCallback(BaseCallbackHandler):
+    def on_llm_start(self, serialized, messages, **kwargs):
+        print("\n[agent] sending to LLM:")
+        for message in messages[0]:
+            if isinstance(message, str):
+                print(f"  {message[:200]}...")
+            else:
+                print(f"  [{message.type}]: {str(message.content)[:200]}...")
+
+    def on_llm_end(self, response, **kwargs):
+        content = response.generations[0][0].text
+        print(f"\n[agent] LLM response: {content[:200]}...")
+
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        print(f"\n[agent] calling tool: {serialized['name']} with: {input_str[:200]}")
+
+    def on_tool_end(self, output, **kwargs):
+        print(f"[agent] tool result: {str(output)[:200]}...")
+
+
 llm = ChatOllama(model="qwen3:14b")
 
 agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_commit])
@@ -91,7 +115,8 @@ response = agent.invoke(
             ("system", SYSTEM_PROMPT),
             ("user", "Start improving the Snake game"),
         ]
-    }
+    },
+    config={"callbacks": [LoggingCallback()]},
 )
 
 print(response["messages"][-1].content)
