@@ -149,10 +149,25 @@ Here is the current smoke-test.js:
 
 {read_file('smoke-test.js')}
 
-Fix the code so all tests pass. Return the complete updated index.html only, no explanation.
+The failure could be in either the game code or the test code.
+Fix whichever file needs fixing so all tests pass.
+Return both files in this exact format:
+
+INDEX_HTML:
+<complete updated index.html here>
+
+SMOKE_TEST:
+<complete updated smoke-test.js here>
 """
         )
-        write_file("index.html", response.content)
+        content = response.content
+        if "INDEX_HTML:" in content and "SMOKE_TEST:" in content:
+            html = content.split("INDEX_HTML:")[1].split("SMOKE_TEST:")[0].strip()
+            test = content.split("SMOKE_TEST:")[1].strip()
+            write_file("index.html", html)
+            write_file("smoke-test.js", test)
+        else:
+            write_file("index.html", content)
     print("[step 5] all attempts failed, skipping feature")
     return False
 
