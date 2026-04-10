@@ -22,6 +22,11 @@
       let direction = "d";
       let gameOver = false;
       let score = 0;
+      let powerUp = null;
+      let speedBoostActive = false;
+      let speedBoostStartTime = 0;
+      let intervalTime = 150;
+      let intervalId = setInterval(tick, intervalTime);
 
       function draw() {
         const canvas = document.getElementById("canvas");
@@ -44,6 +49,11 @@
         ctx.fillStyle = "red";
         ctx.fillRect(food.x, food.y, 25, 25);
 
+        if (powerUp) {
+          ctx.fillStyle = "yellow";
+          ctx.fillRect(powerUp.x, powerUp.y, 25, 25);
+        }
+
         ctx.fillStyle = "purple";
         snake.forEach((segment) => {
           ctx.fillRect(segment.x, segment.y, 25, 25);
@@ -54,6 +64,16 @@
         if (gameOver) {
           draw();
           return;
+        }
+
+        if (speedBoostActive) {
+          const currentTime = Date.now();
+          if (currentTime - speedBoostStartTime >= 5000) {
+            speedBoostActive = false;
+            intervalTime = 150;
+            clearInterval(intervalId);
+            intervalId = setInterval(tick, intervalTime);
+          }
         }
 
         const head = { ...snake[0] };
@@ -77,10 +97,20 @@
           return;
         }
 
+        if (powerUp && head.x === powerUp.x && head.y === powerUp.y) {
+          activateSpeedBoost();
+          powerUp = null;
+        }
+
         snake.unshift(head);
 
         if (head.x === food.x && head.y === food.y) {
-          food = randomFood();
+          const chance = Math.random();
+          if (chance < 0.2) {
+            powerUp = randomPowerUp();
+          } else {
+            food = randomFood();
+          }
           score++;
         } else {
           snake.pop();
@@ -88,10 +118,31 @@
         draw();
       }
 
+      function activateSpeedBoost() {
+        speedBoostActive = true;
+        speedBoostStartTime = Date.now();
+        intervalTime = 75;
+        clearInterval(intervalId);
+        intervalId = setInterval(tick, intervalTime);
+      }
+
       function randomFood() {
         const x = Math.floor(Math.random() * 16) * 25;
         const y = Math.floor(Math.random() * 16) * 25;
         return { x, y };
+      }
+
+      function randomPowerUp() {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * 16) * 25;
+          y = Math.floor(Math.random() * 16) * 25;
+        } while (isPositionOccupied(x, y));
+        return { x, y };
+      }
+
+      function isPositionOccupied(x, y) {
+        return snake.some(seg => seg.x === x && seg.y === y) || (food && food.x === x && food.y === y);
       }
 
       document.addEventListener("keydown", (e) => {
@@ -101,16 +152,16 @@
         if (e.key === "d") direction = "d";
       });
 
-      setInterval(tick, 150);
-
       window.getGameState = function () {
-        return { snake, food, gameOver, score };
+        return { snake, food, gameOver, score, powerUp, speedBoostActive };
       };
 
-      window.setGameState = function (newSnake, newFood, newDirection) {
+      window.setGameState = function (newSnake, newFood, newDirection, newPowerUp, newSpeedBoostActive) {
         snake = newSnake;
         food = newFood;
         direction = newDirection;
+        powerUp = newPowerUp;
+        speedBoostActive = newSpeedBoostActive;
         draw();
       };
     </script>

@@ -185,6 +185,46 @@ async function testGameOverMessage(page) {
   };
 }
 
+async function testSpeedBoost(page) {
+  const beforeFile = "screenshots/speed-boost-before.png";
+  const afterFile = "screenshots/speed-boost-after.png";
+  await page.evaluate(() =>
+    window.setGameState(
+      [
+        { x: 350, y: 175 },
+        { x: 325, y: 175 },
+        { x: 300, y: 175 },
+      ],
+      { x: 350, y: 175 },
+      "d",
+      null,
+      true
+    ),
+  );
+  const before = await page.evaluate(() => window.getGameState());
+  await page.screenshot({ path: beforeFile });
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(() => window.getGameState());
+  await page.screenshot({ path: afterFile });
+
+  const passed = after.speedBoostActive;
+
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Has the snake collided with the speed boost, causing the game speed to double?",
+      );
+
+  return {
+    name: "speed boost",
+    passed,
+    vision,
+    screenshot: [beforeFile, afterFile],
+  };
+}
+
 async function main() {
   mkdirSync("screenshots", { recursive: true });
   const browser = await chromium.launch();
@@ -198,6 +238,7 @@ async function main() {
     await testFoodEating(page),
     await testScoreIncrements(page),
     await testGameOverMessage(page),
+    await testSpeedBoost(page),
   ];
 
   results.forEach((r) => {
