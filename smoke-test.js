@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "fs";
 import { analyzeScreenshot } from "./llm.js";
 
-const AGENT_MODE = process.env.AGENT_MODE === 'true';
+const AGENT_MODE = process.env.AGENT_MODE === "true";
 
 async function testSnakeMoves(page) {
   const beforeFile = "screenshots/snake-moves-before.png";
@@ -16,13 +16,13 @@ async function testSnakeMoves(page) {
 
   const passed = after.snake[0].y > before.snake[0].y;
 
-  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
-    beforeFile,
-    afterFile,
-    `These are two screenshots of a Snake game taken before and after pressing the down key. 
-    In the first image the snake is a horizontal green rectangle. 
-    In the second image has the snake's orientation changed to vertical?`,
-  );
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Has the snake moved downward between the first and second image?",
+      );
 
   return {
     name: "snake moves down",
@@ -54,13 +54,13 @@ async function testSnakeWraps(page) {
 
   const passed = after.snake[0].x < before.snake[0].x;
 
-  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
-    beforeFile,
-    afterFile,
-    `These are two screenshots of a Snake game taken as the game starts then waiting for the snake to move. 
-    In the first image the snake is in the middle of the screen. 
-    In the second image has the snake wrapped from the left of the screen to the right?`,
-  );
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Has the snake wrapped from one side of the screen to the other?",
+      );
 
   return {
     name: "snake wraps",
@@ -92,13 +92,13 @@ async function testFoodEating(page) {
 
   const passed = after.snake.length > before.snake.length;
 
-  const vision = AGENT_MODE ? 'vision skipped in agent mode' : await analyzeScreenshot(
-    beforeFile,
-    afterFile,
-    `These are two screenshots of a Snake game taken as the game starts with some food which is a red square.
-    In the first image the snake is heading for some food. 
-    In the second image the snake has eaten the food and the food has moved, the snake has gotten larger?`,
-  );
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Has the snake eaten the food and grown longer?",
+      );
 
   return {
     name: "snake eats",

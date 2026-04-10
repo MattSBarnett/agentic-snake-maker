@@ -102,8 +102,6 @@ Add this new test function to the file and add it to the results array in main()
 {test_code}
 
 Return the complete updated smoke-test.js file only, no explanation.
-
-Important: preserve all template literals exactly as they are, including backtick strings. Do not convert backticks to regular quotes.
 """
     )
     write_file("smoke-test.js", response.content)
