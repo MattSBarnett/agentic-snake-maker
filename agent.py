@@ -32,6 +32,9 @@ You must NEVER stop to report what needs fixing. Always fix it yourself using th
 Keep working until all tests pass and changes are committed.
 Do not ask for confirmation or report problems — just solve them.
 
+After reading both files ONCE, you must immediately decide on a feature and start implementing it.
+Do not read the same file more than once before writing code.
+
 Always respond in English only. Never include Chinese characters or thinking tokens in your output.
 """
 
@@ -115,6 +118,7 @@ class LoggingCallback(BaseCallbackHandler):
 llm = ChatOllama(model="qwen3:14b", streaming=False)
 
 agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_commit])
+agent = agent.with_config({"recursion_limit": 50})
 
 response = agent.invoke(
     {
