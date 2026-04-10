@@ -108,6 +108,44 @@ async function testFoodEating(page) {
   };
 }
 
+async function testScoreIncrements(page) {
+  const beforeFile = "screenshots/score-increments-before.png";
+  const afterFile = "screenshots/score-increments-after.png";
+  await page.evaluate(() =>
+    window.setGameState(
+      [
+        { x: 350, y: 175 },
+        { x: 325, y: 175 },
+        { x: 300, y: 175 },
+      ],
+      { x: 375, y: 175 },
+      "d",
+    ),
+  );
+  const before = await page.evaluate(() => window.getGameState());
+  await page.keyboard.press("d");
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(() => window.getGameState());
+  await page.screenshot({ path: afterFile });
+
+  const passed = after.score === before.score + 1;
+
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Is the score displayed and incremented in the second image?",
+      );
+
+  return {
+    name: "score increments",
+    passed,
+    vision,
+    screenshot: [beforeFile, afterFile],
+  };
+}
+
 async function testGameOverMessage(page) {
   const beforeFile = "screenshots/game-over-before.png";
   const afterFile = "screenshots/game-over-after.png";
@@ -158,6 +196,7 @@ async function main() {
     await testSnakeMoves(page),
     await testSnakeWraps(page),
     await testFoodEating(page),
+    await testScoreIncrements(page),
     await testGameOverMessage(page),
   ];
 
