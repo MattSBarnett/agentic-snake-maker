@@ -1,8 +1,12 @@
 import os
+import sys
+
 from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langchain_core.callbacks import BaseCallbackHandler
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 SYSTEM_PROMPT = """
 You are an autonomous agent that iteratively improves a Snake game.
@@ -86,26 +90,27 @@ def git_commit(message: str) -> str:
 
 
 class LoggingCallback(BaseCallbackHandler):
-    def on_llm_start(self, serialized, messages, **kwargs):
-        print("\n[agent] sending to LLM:")
-        for message in messages[0]:
-            if isinstance(message, str):
-                print(f"  {message[:200]}...")
-            else:
-                print(f"  [{message.type}]: {str(message.content)[:200]}...")
-
     def on_llm_end(self, response, **kwargs):
-        content = response.generations[0][0].text
-        print(f"\n[agent] LLM response: {content[:200]}...")
+        generation = response.generations[0][0]
+        # get the actual message content
+        if hasattr(generation, "message"):
+            content = generation.message.content
+            if content:
+                print(f"\n[agent] reasoning: {content[:300]}...")
 
     def on_tool_start(self, serialized, input_str, **kwargs):
-        print(f"\n[agent] calling tool: {serialized['name']} with: {input_str[:200]}")
+        print(f"\n[agent] calling tool: {serialized['name']}")
+        print(f"  args: {str(input_str)[:200]}")
 
     def on_tool_end(self, output, **kwargs):
-        print(f"[agent] tool result: {str(output)[:200]}...")
+        # strip the langchain wrapper and just show the value
+        output_str = str(output)
+        if "content=" in output_str:
+            output_str = output_str.split("content='")[1].split("'")[0]
+        print(f"[agent] result: {output_str[:200]}")
 
 
-llm = ChatOllama(model="qwen3:14b")
+llm = ChatOllama(model="qwen3:14b", streaming=False)
 
 agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_commit])
 
