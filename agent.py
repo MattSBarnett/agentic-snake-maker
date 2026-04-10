@@ -162,6 +162,7 @@ def run_pipeline():
     test_code = step_write_test(feature)
     step_add_test_to_file(test_code)
     step_implement_feature(feature)
+    passed = step_run_and_fix()
     if passed:
         git_commit(f"Add feature: {feature[:60]}")
         print("\n[done] feature complete and committed!")
