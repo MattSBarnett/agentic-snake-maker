@@ -1,134 +1,172 @@
 import os
 import sys
+import subprocess
 
 from langchain_ollama import ChatOllama
-from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
-from langchain_core.callbacks import BaseCallbackHandler
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-SYSTEM_PROMPT = """
-You are an autonomous agent that iteratively improves a Snake game.
-
-Your workflow for each feature:
-1. Read the current index.html and smoke-test.js to understand the codebase
-2. Decide on one new feature to add
-3. Write a new test for it in smoke-test.js
-4. Implement the feature in index.html
-5. Run the tests
-6. If tests fail, read the files again, fix the code and retest (max 3 attempts)
-7. If tests pass, commit with a descriptive message
-8. Then start again with a new feature
-
-Rules:
-- Always read files before editing them
-- Always write a test before writing the feature code
-- Never give up after fewer than 3 attempts
-- Only commit when all tests pass
-- Keep features small and focused
-
-You must NEVER stop to report what needs fixing. Always fix it yourself using the available tools.
-Keep working until all tests pass and changes are committed.
-Do not ask for confirmation or report problems — just solve them.
-
-After reading both files ONCE, you must immediately decide on a feature and start implementing it.
-Do not read the same file more than once before writing code.
-
-Always respond in English only. Never include Chinese characters or thinking tokens in your output.
-"""
+llm = ChatOllama(model="qwen3:14b", streaming=False)
 
 
-@tool
 def read_file(path: str) -> str:
-    """Read a file from disk and return its contents."""
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
 
-@tool
 def write_file(path: str, content: str) -> str:
-    """Write content to a file on disk. Can create new files if needed."""
-    import os
-
     allowed_dir = os.path.abspath(
         r"C:\Users\matts\Documents\local_development\snake_agent"
     )
     target = os.path.abspath(path)
-
     if not target.startswith(allowed_dir):
-        return (
-            f"Error: writing to {path} is not allowed outside of the project directory."
+        raise Exception(
+            f"Writing to {path} is not allowed outside of the project directory."
         )
-
     os.makedirs(os.path.dirname(target), exist_ok=True)
     with open(target, "w", encoding="utf-8") as f:
         f.write(content)
-    return f"Successfully written to {path}"
 
 
-@tool
 def run_tests() -> str:
-    """Run the smoke tests against the game and return the results."""
-    import subprocess
-
     result = subprocess.run(
         ["node", "smoke-test.js"],
         capture_output=True,
         text=True,
         env={**os.environ, "AGENT_MODE": "true"},
     )
-    output = result.stdout + result.stderr
-    print(output)
-    return output
+    return result.stdout + result.stderr
 
 
-@tool
-def git_commit(message: str) -> str:
-    """Commit all current changes with a descriptive message."""
-    import subprocess
-
-    full_message = f"[agent] {message}"
+def git_commit(message: str):
     subprocess.run(["git", "add", "."])
-    subprocess.run(["git", "commit", "-m", full_message])
-    return f"Committed: {full_message}"
+    subprocess.run(["git", "commit", "-m", f"[agent] {message}"])
 
 
-class LoggingCallback(BaseCallbackHandler):
-    def on_llm_end(self, response, **kwargs):
-        generation = response.generations[0][0]
-        if hasattr(generation, "message"):
-            msg = generation.message
-            if hasattr(msg, "tool_calls") and msg.tool_calls:
-                print(f"\n[agent] decided to call: {msg.tool_calls[0]['name']}")
-            elif msg.content:
-                print(f"\n[agent] reasoning: {str(msg.content)[:300]}")
+def step_decide_feature() -> str:
+    print("\n[step 1] deciding on a new feature...")
+    response = llm.invoke(
+        f"""
+Here is the current Snake game code:
 
-    def on_tool_start(self, serialized, input_str, **kwargs):
-        print(f"\n[agent] calling tool: {serialized['name']}")
-        print(f"  args: {str(input_str)[:200]}")
+{read_file('index.html')}
 
-    def on_tool_end(self, output, **kwargs):
-        # strip the langchain wrapper and just show the value
-        output_str = str(output)
-        if "content=" in output_str:
-            output_str = output_str.split("content='")[1].split("'")[0]
-        print(f"[agent] result: {output_str[:200]}")
+And the current tests:
+
+{read_file('smoke-test.js')}
+
+Decide on ONE small new feature to add to this Snake game.
+Describe it in 2-3 sentences. Be specific about what it does and how it works.
+Do not write any code yet.
+"""
+    )
+    feature = response.content
+    print(f"[step 1] feature decided: {feature[:200]}...")
+    return feature
 
 
-llm = ChatOllama(model="qwen3:14b", streaming=False)
+def step_write_test(feature: str) -> str:
+    print("\n[step 2] writing test...")
+    response = llm.invoke(
+        f"""
+Here is the current smoke-test.js:
 
-agent = create_react_agent(llm, tools=[read_file, write_file, run_tests, git_commit])
-agent = agent.with_config({"recursion_limit": 50})
+{read_file('smoke-test.js')}
 
-response = agent.invoke(
-    {
-        "messages": [
-            ("system", SYSTEM_PROMPT),
-            ("user", "Start improving the Snake game"),
-        ]
-    },
-    config={"callbacks": [LoggingCallback()]},
-)
+Write a new test function for this feature:
+{feature}
 
-print(response["messages"][-1].content)
+Rules:
+- Follow the exact same style as the existing tests
+- Use window.setGameState() and window.getGameState() where needed
+- Return the complete new test function only, no explanation
+- Do not include the main() function or imports
+- The function must be named test[FeatureName] and accept a page parameter
+"""
+    )
+    test_code = response.content
+    print(f"[step 2] test written: {test_code[:200]}...")
+    return test_code
+
+
+def step_add_test_to_file(test_code: str):
+    print("\n[step 3] adding test to smoke-test.js...")
+    response = llm.invoke(
+        f"""
+Here is the current smoke-test.js:
+
+{read_file('smoke-test.js')}
+
+Add this new test function to the file and add it to the results array in main():
+
+{test_code}
+
+Return the complete updated smoke-test.js file only, no explanation.
+"""
+    )
+    write_file("smoke-test.js", response.content)
+    print("[step 3] smoke-test.js updated")
+
+
+def step_implement_feature(feature: str):
+    print("\n[step 4] implementing feature in index.html...")
+    response = llm.invoke(
+        f"""
+Here is the current Snake game code:
+
+{read_file('index.html')}
+
+Implement this feature:
+{feature}
+
+Return the complete updated index.html file only, no explanation.
+"""
+    )
+    write_file("index.html", response.content)
+    print("[step 4] index.html updated")
+
+
+def step_run_and_fix() -> bool:
+    print("\n[step 5] running tests...")
+    for attempt in range(1, 4):
+        output = run_tests()
+        print(output)
+        if "FAIL" not in output and "Error" not in output:
+            print(f"[step 5] all tests passed on attempt {attempt}")
+            return True
+        print(f"[step 5] attempt {attempt} failed, fixing...")
+        response = llm.invoke(
+            f"""
+The Snake game tests are failing. Here is the test output:
+
+{output}
+
+Here is the current index.html:
+
+{read_file('index.html')}
+
+Here is the current smoke-test.js:
+
+{read_file('smoke-test.js')}
+
+Fix the code so all tests pass. Return the complete updated index.html only, no explanation.
+"""
+        )
+        write_file("index.html", response.content)
+    print("[step 5] all attempts failed, skipping feature")
+    return False
+
+
+def run_pipeline():
+    feature = step_decide_feature()
+    test_code = step_write_test(feature)
+    step_add_test_to_file(test_code)
+    step_implement_feature(feature)
+    if passed:
+        git_commit(f"Add feature: {feature[:60]}")
+        print("\n[done] feature complete and committed!")
+    else:
+        print("\n[done] feature failed after 3 attempts, changes not committed")
+
+
+run_pipeline()
