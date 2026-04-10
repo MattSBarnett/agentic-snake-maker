@@ -97,11 +97,12 @@ def git_commit(message: str) -> str:
 class LoggingCallback(BaseCallbackHandler):
     def on_llm_end(self, response, **kwargs):
         generation = response.generations[0][0]
-        # get the actual message content
         if hasattr(generation, "message"):
-            content = generation.message.content
-            if content:
-                print(f"\n[agent] reasoning: {content[:300]}...")
+            msg = generation.message
+            if hasattr(msg, "tool_calls") and msg.tool_calls:
+                print(f"\n[agent] decided to call: {msg.tool_calls[0]['name']}")
+            elif msg.content:
+                print(f"\n[agent] reasoning: {str(msg.content)[:300]}")
 
     def on_tool_start(self, serialized, input_str, **kwargs):
         print(f"\n[agent] calling tool: {serialized['name']}")
