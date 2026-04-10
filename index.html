@@ -20,11 +20,21 @@
       ];
       let food = randomFood();
       let direction = "d";
+      let gameOver = false;
 
       function draw() {
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (gameOver) {
+          ctx.fillStyle = "red";
+          ctx.font = "30px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
+          return;
+        }
 
         ctx.fillStyle = "red";
         ctx.fillRect(food.x, food.y, 25, 25);
@@ -36,6 +46,11 @@
       }
 
       function tick() {
+        if (gameOver) {
+          draw();
+          return;
+        }
+
         const head = { ...snake[0] };
 
         if (direction === "w") head.y -= 25;
@@ -51,7 +66,11 @@
         const hitSelf = snake.some(
           (seg) => seg.x === head.x && seg.y === head.y,
         );
-        if (hitSelf) return;
+        if (hitSelf) {
+          gameOver = true;
+          draw();
+          return;
+        }
 
         snake.unshift(head);
 
@@ -79,7 +98,7 @@
       setInterval(tick, 150);
 
       window.getGameState = function () {
-        return { snake, food };
+        return { snake, food, gameOver };
       };
 
       window.setGameState = function (newSnake, newFood, newDirection) {

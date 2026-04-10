@@ -108,6 +108,45 @@ async function testFoodEating(page) {
   };
 }
 
+async function testGameOverMessage(page) {
+  const beforeFile = "screenshots/game-over-before.png";
+  const afterFile = "screenshots/game-over-after.png";
+  await page.evaluate(() =>
+    window.setGameState(
+      [
+        { x: 300, y: 175 },
+        { x: 325, y: 175 },
+        { x: 300, y: 200 },
+      ],
+      { x: 350, y: 175 },
+      "d",
+    ),
+  );
+  const before = await page.evaluate(() => window.getGameState());
+  await page.screenshot({ path: beforeFile });
+  await page.keyboard.press("d");
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(() => window.getGameState());
+  await page.screenshot({ path: afterFile });
+
+  const passed = after.gameOver;
+
+  const vision = AGENT_MODE
+    ? "vision skipped in agent mode"
+    : await analyzeScreenshot(
+        beforeFile,
+        afterFile,
+        "These are two screenshots of a Snake game. Is the 'Game Over' message visible in the second image?",
+      );
+
+  return {
+    name: "game over message",
+    passed,
+    vision,
+    screenshot: [beforeFile, afterFile],
+  };
+}
+
 async function main() {
   mkdirSync("screenshots", { recursive: true });
   const browser = await chromium.launch();
@@ -119,6 +158,7 @@ async function main() {
     await testSnakeMoves(page),
     await testSnakeWraps(page),
     await testFoodEating(page),
+    await testGameOverMessage(page),
   ];
 
   results.forEach((r) => {
